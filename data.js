@@ -4,7 +4,7 @@ const linkData = [
         iconClass: 'fab fa-apple',
         title: 'Kho IPA',
         description: 'Kho ipa siêu vip dành cho bạn',
-        url: 'https://ontop2k9.github.io/shareipa/',
+        url: 'https://websitevip.github.io/shareipa/',
         linkTypeClass: 'apple-link'
     },
     {
