@@ -12,7 +12,7 @@ const linkData = [
         iconClass: 'fab fa-telegram-plane',
         title: 'Grup Telegram',
         description: 'Trả Đổi Công Nghệ',
-        url: 'https://t.me/addlist/6AxIXU4bsLRjYzJl',
+        url: 'https://websitevip.github.io/Telegram',
         linkTypeClass: 'telegram-link'
     },
     {
