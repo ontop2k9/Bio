@@ -25,7 +25,7 @@ const linkData = [
     },
     {
         type: 'link',
-        iconImage: 'https://i.imgur.com/bXed84d.png', // Ví dụ: 'https://i.imgur.com/your-ontop-logo.png'
+        iconImage: 'https://i.ibb.co/998WPPPt/IMG-7887.png', // Ví dụ: 'https://i.imgur.com/your-ontop-logo.png'
         title: 'ON^TOP IOS',
         description: 'Server discord',
         url: 'https://discord.gg/M8jbZwy9',
