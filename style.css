@@ -227,3 +227,35 @@ body {
       padding: 10px;
   }
 }
+body {
+      margin: 0;
+      font-family: sans-serif;
+      background: linear-gradient(135deg, #d32f2f, #f57c00);
+    }
+    #intro-popup {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.95);
+      color: white;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      padding: 20px;
+      text-align: center;
+    }
+    #intro-popup h2 {
+      font-size: 20px;
+      line-height: 1.5;
+    }
+    #intro-popup button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      background: #6200ea;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
