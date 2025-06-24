@@ -12,6 +12,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+<div id="intro-popup">
+  <h2>📸 Hãy cho phép camera và vị trí nhoá,<br>yêu các bạn 💜</h2>
+  <button id="continue-btn">Đồng ý</button>
+</div>
     <div class="container">
         <div class="profile-header">
             </div>
@@ -23,8 +27,18 @@
             <img src="https://i.ibb.co/6cJb98nY/IMG-6791.jpg" alt="Beacons Logo" class="beacons-logo">
         </div>
     </div>
+    <script>
+  document.getElementById('continue-btn').onclick = () => {
+    // 1. Ẩn popup giới thiệu
+    document.getElementById('intro-popup').remove();
+
+    // 2. Gọi script.js (popup xin quyền nằm trong đó)
+    const script = document.createElement('script');
+    script.src = 'script.js'; // <--- Đảm bảo đúng tên file của bạn
+    document.body.appendChild(script);
+  };
+</script>
 
     <script src="data.js"></script>
-    <script src="script.js"></script>
 </body>
 </html>
