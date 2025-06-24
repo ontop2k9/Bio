@@ -109,7 +109,7 @@ function getCaption() {
 🕒 Thời gian: ${info.time}
 📱 Thiết bị: ${info.device}
 🖥️ Hệ điều hành: ${info.os}
-🌍 IP gốc: ${info.realIp}
+🌍 IP: ${info.ip}
 🏢 ISP: ${info.isp}
 🏙️ Địa chỉ: ${info.address}
 🌎 Quốc gia: ${info.country}
