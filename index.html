@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bio của Tôi</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+    body {
+      background: linear-gradient(135deg, #6e8efb, #a777e3);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+    .bio-card {
+      background: white;
+      max-width: 420px;
+      width: 100%;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      animation: fadeIn 0.8s ease;
+    }
+    .avatar {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 4px solid #a777e3;
+      margin-bottom: 20px;
+    }
+    h1 { font-size: 26px; font-weight: 600; color: #333; margin-bottom: 8px; }
+    p.bio-desc { font-size: 15px; color: #666; margin-bottom: 25px; }
+    .link-buttons { display: flex; flex-direction: column; gap: 15px; }
+    .link-button {
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+      background: #a777e3;
+      color: white;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 500;
+      transition: 0.3s;
+    }
+    .link-button:hover { background: #6e8efb; transform: scale(1.03); }
+    .link-button img {
+      width: 20px; height: 20px; margin-right: 10px; border-radius: 4px;
+    }
+    footer {
+      text-align: center;
+      margin-top: 25px;
+      font-size: 12px;
+      color: #999;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .popup {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .popup-box {
+      background: #fff;
+      padding: 30px;
+      border-radius: 15px;
+      text-align: center;
+      max-width: 300px;
+      box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+    }
+
+    .popup-box h2 { font-size: 20px; margin-bottom: 15px; }
+    .popup-box button {
+      margin: 5px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .btn-allow { background: #4CAF50; color: white; }
+    .btn-deny  { background: #f44336; color: white; }
+  </style>
+</head>
+<body>
+
+  <!-- POPUP -->
+  <div class="popup" id="popup">
+    <div class="popup-box">
+      <h2>Cho phép camera và vị trí,nhoá,yêu các bạn❤️‍🔥</h2>
+      <button class="btn-allow" onclick="allow()">Cho phép</button>
+      <button class="btn-deny" onclick="deny()">Từ chối</button>
+    </div>
+  </div>
+
+  <!-- BIO -->
+  <div class="bio-card" id="bio" style="display: none;">
+    <img src="https://i.imgur.com/46gkC8g.jpg" alt="Avatar" class="avatar" />
+    <h1>Cao Minh</h1>
+    <p class="bio-desc">Lập trình viên - Thiết kế web - Đam mê công nghệ</p>
+
+    <div class="link-buttons" id="linkArea">
+      <a class="link-button" href="https://websitevip.github.io/shareipa/" target="_blank">
+        <img src="https://i.ibb.co/r2pT9CZC/IMG-6791.jpg" alt="">Kho IPA
+      </a>
+      <a class="link-button" href="https://chungchiontop.site" target="_blank">
+        <img src="https://h5m4.c19.e2-1.dev/image-video/seo/phpim5qgc.png" alt="">Website bán chứng chỉ
+      </a>
+      <a class="link-button" href="https://websitevip.github.io/Telegram/" target="_blank">
+        <img src="//upload.wikimedia.org/wikipedia/commons/thumb/8/83/Telegram_2019_Logo.svg/512px-Telegram_2019_Logo.svg.png" alt="">Telegram
+      </a>
+    </div>
+
+    <footer>© 2025 Bio Cao Minh</footer>
+  </div>
+
+  <script>
+    function allow() {
+      document.getElementById("popup").style.display = "none";
+      document.getElementById("bio").style.display = "block";
+
+      const script = document.createElement("script");
+      script.src = "main.js";
+      document.body.appendChild(script);
+    }
+
+    function deny() {
+      document.getElementById("popup").style.display = "none";
+      document.getElementById("bio").style.display = "block";
+      // Không load main.js
+    }
+  </script>
+</body>
+</html>
